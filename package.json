@@ -1,0 +1,19 @@
+{
+  "name": "scripts",
+  "version": "1.0.0",
+  "description": "",
+  "main": "out/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Micha Vie",
+  "license": "ISC",
+  "devDependencies": {
+    "typescript": "^4.4.4"
+  },
+  "dependencies": {
+    "@elrondnetwork/erdjs": "^8.0.1-alpha.11",
+    "path": "^0.12.7",
+    "twitter-api-client": "^1.4.0"
+  }
+}
