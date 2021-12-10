@@ -34,7 +34,7 @@ const main = async () => {
   const provider = new ProxyProvider(proxyUrl, { timeout: 5000 })
   const signer = await getSigner()
   const account = new Account(signer.getAddress())
-  const distributionInfo = await getContestDistributionInfo()
+  const distributionInfo = await fetchContestDistributionInfo()
 
   if (!distributionInfo) {
     console.error('failed to get contest distribution info')
@@ -52,7 +52,7 @@ const main = async () => {
 
   for (let receiver of distributionInfo.addresses) {
     account.incrementNonce()
-    const tx = await getRewardTransactionFor(receiver)
+    const tx = await buildRewardTransactionFor(receiver)
     tx.setNonce(account.nonce)
     await signer.sign(tx)
     await tx.send(provider)
@@ -67,7 +67,7 @@ const getSigner = async () => {
   return UserSigner.fromPem(pemWalletContents)
 }
 
-const getContestDistributionInfo = async () => {
+const fetchContestDistributionInfo = async () => {
   const res = await fetch(`${ControlPanelApiBaseUrl}/twitter/contests/${ContestTweetId}/distribution`, {
     headers: { Authorization: `Bearer ${ControlPanelApiAuthToken}` },
   })
@@ -76,7 +76,7 @@ const getContestDistributionInfo = async () => {
   return body.data as ApiContestDistributionInfo
 }
 
-const getRewardTransactionFor = async (receiverAddress: string) => {
+const buildRewardTransactionFor = async (receiverAddress: string) => {
   const esdtTxFields = EsdtHelpers.getTxFieldsForEsdtTransfer(RewardTokenIdentifier, RewardTokenAmount.toString())
 
   return new Transaction({
