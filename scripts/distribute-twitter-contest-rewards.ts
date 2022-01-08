@@ -2,28 +2,34 @@ import path, { dirname } from 'path'
 import fs from 'fs'
 import fetch from 'node-fetch'
 import { fileURLToPath } from 'url'
+import BigNumber from 'bignumber.js'
 import {
   ProxyProvider,
   UserSigner,
   Account,
   Transaction,
   Address,
-  EsdtHelpers,
   Balance,
   TransactionPayload,
   GasLimit,
+  NetworkConfig,
+  ContractFunction,
+  BigUIntValue,
+  BytesValue,
 } from '@elrondnetwork/erdjs'
 
-const ContestTweetId = 'TWITTER CONTEST TWEET ID'
-const RewardTokenIdentifier = 'TOKEN ID'
+const ContestTweetId = ''
+const RewardTokenIdentifier = ''
 const RewardTokenAmount = 0
 const PemFile = 'distributor.pem'
 const IsTestnet = true
+const SimulateSending = true
 const ControlPanelApiBaseUrl = IsTestnet ? 'http://superciety--cp.test/api' : 'https://cp.superciety.com/api'
-const ControlPanelApiAuthToken = 'SECRET API KEY - IF YOU CHEK THIS IN YOU ARE A LOSER'
+const ControlPanelApiAuthToken = 'IF YOU CHECK THIS IN YOU ARE A NOOB'
 
 type ApiContestDistributionInfo = {
   finished: boolean
+  count: number
   addresses: string[]
 }
 
@@ -46,19 +52,33 @@ const main = async () => {
     return
   }
 
-  console.log(`distributing to ${distributionInfo.addresses.length} receivers`)
+  console.log(`distributing to ${distributionInfo.count} receivers ...`)
+  console.log(`total distribution value: ${distributionInfo.count * RewardTokenAmount} ${RewardTokenIdentifier}`)
 
+  await NetworkConfig.getDefault().sync(provider)
   await account.sync(provider)
 
+  let count = 0
+
   for (let receiver of distributionInfo.addresses) {
-    account.incrementNonce()
+    count++
     const tx = await buildRewardTransactionFor(receiver)
     tx.setNonce(account.nonce)
     await signer.sign(tx)
-    await tx.send(provider)
-    console.log(`sent rewards ${RewardTokenAmount} ${RewardTokenIdentifier} to ${receiver}: ${tx.getHash()}`)
-    await new Promise(r => setTimeout(r, 2 * 1000))
+    account.incrementNonce()
+
+    if (SimulateSending) {
+      await tx.simulate(provider)
+    } else {
+      await tx.send(provider)
+    }
+
+    console.log(`${count}. sent ${RewardTokenAmount} ${RewardTokenIdentifier} to ${receiver}: ${tx.getHash()}`)
+
+    await new Promise(r => setTimeout(r, 300)) // 3 txs / s = 18 txs / block, in a 6 second block
   }
+
+  console.log('guess what? we are done!')
 }
 
 const getSigner = async () => {
@@ -68,7 +88,7 @@ const getSigner = async () => {
 }
 
 const fetchContestDistributionInfo = async () => {
-  const res = await fetch(`${ControlPanelApiBaseUrl}/twitter/contests/${ContestTweetId}/distribution`, {
+  const res = await fetch(`${ControlPanelApiBaseUrl}/twitter/contests/${ContestTweetId}/distribution/all`, {
     headers: { Authorization: `Bearer ${ControlPanelApiAuthToken}` },
   })
   if (!res.ok) return null
@@ -76,15 +96,16 @@ const fetchContestDistributionInfo = async () => {
   return body.data as ApiContestDistributionInfo
 }
 
-const buildRewardTransactionFor = async (receiverAddress: string) => {
-  const esdtTxFields = EsdtHelpers.getTxFieldsForEsdtTransfer(RewardTokenIdentifier, RewardTokenAmount.toString())
-
-  return new Transaction({
-    data: new TransactionPayload(esdtTxFields.data),
-    gasLimit: new GasLimit(esdtTxFields.gasLimit),
+const buildRewardTransactionFor = async (receiverAddress: string) =>
+  new Transaction({
+    data: TransactionPayload.contractCall()
+      .setFunction(new ContractFunction('ESDTTransfer'))
+      .addArg(BytesValue.fromUTF8(RewardTokenIdentifier))
+      .addArg(new BigUIntValue(new BigNumber(RewardTokenAmount)))
+      .build(),
+    gasLimit: new GasLimit(500000),
     receiver: new Address(receiverAddress),
     value: Balance.Zero(),
   })
-}
 
 main()
