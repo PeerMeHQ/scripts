@@ -1,8 +1,8 @@
 import path, { dirname } from 'path'
 import fs from 'fs'
 import fetch from 'node-fetch'
-import { fileURLToPath } from 'url'
 import BigNumber from 'bignumber.js'
+import { fileURLToPath } from 'url'
 import {
   ProxyProvider,
   UserSigner,
