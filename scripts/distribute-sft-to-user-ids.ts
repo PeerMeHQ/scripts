@@ -15,12 +15,14 @@ import {
   NetworkConfig,
   ContractFunction,
   BigUIntValue,
-  BytesValue,
+  U64Value,
+  AddressValue,
+  TokenIdentifierValue,
 } from '@elrondnetwork/erdjs'
 
 const RewardTokenIdentifier = ''
-const RewardTokenAmount = 0
-const InputFile = 'in.json'
+const RewardTokenNonce = 0
+const InputFile = 'snapshot.json'
 const PemFile = 'distributor.pem'
 const IsTestnet = true
 const SimulateSending = true
@@ -37,7 +39,6 @@ const main = async () => {
   const winners = await getWinnerIdentifiers()
 
   console.log(`distributing to ${winners.length} receivers ...`)
-  console.log(`total distribution value: ${winners.length * RewardTokenAmount} ${RewardTokenIdentifier}`)
 
   await NetworkConfig.getDefault().sync(provider)
   await account.sync(provider)
@@ -46,14 +47,18 @@ const main = async () => {
 
   for (let receiverIdentifier of winners) {
     count++
-    const address = isAddress(receiverIdentifier) ? receiverIdentifier : await getAddressFromUsername(receiverIdentifier)
 
-    if (!address) {
+    const receiverBech32 = isAddress(receiverIdentifier)
+      ? receiverIdentifier
+      : await getAddressFromUsername(receiverIdentifier)
+
+    if (!receiverBech32) {
       console.error(`failed to fetch address for username '${receiverIdentifier}'`)
       continue
     }
 
-    const tx = await buildRewardTransactionFor(address)
+    const receiverAddress = new Address(receiverBech32)
+    const tx = await buildRewardTransactionFor(account.address, receiverAddress)
     tx.setNonce(account.nonce)
     await signer.sign(tx)
     account.incrementNonce()
@@ -64,7 +69,7 @@ const main = async () => {
       await tx.send(provider)
     }
 
-    console.log(`${count}. sent ${RewardTokenAmount} ${RewardTokenIdentifier} to ${address}: ${tx.getHash()}`)
+    console.log(`${count}. sent ${RewardTokenIdentifier}-${RewardTokenNonce} to ${receiverBech32}: ${tx.getHash()}`)
 
     await new Promise(r => setTimeout(r, 300)) // ~ 3 txs / s = 18 txs / block, in a 6 second block
   }
@@ -94,15 +99,17 @@ const getAddressFromUsername = async (username: string) => {
   return body.address || null
 }
 
-const buildRewardTransactionFor = async (receiverAddress: string) =>
+const buildRewardTransactionFor = async (sender: Address, receiver: Address) =>
   new Transaction({
     data: TransactionPayload.contractCall()
-      .setFunction(new ContractFunction('ESDTTransfer'))
-      .addArg(BytesValue.fromUTF8(RewardTokenIdentifier))
-      .addArg(new BigUIntValue(new BigNumber(RewardTokenAmount)))
+      .setFunction(new ContractFunction('ESDTNFTTransfer'))
+      .addArg(new TokenIdentifierValue(Buffer.from(RewardTokenIdentifier)))
+      .addArg(new U64Value(new BigNumber(RewardTokenNonce)))
+      .addArg(new BigUIntValue(new BigNumber(1)))
+      .addArg(new AddressValue(receiver))
       .build(),
     gasLimit: new GasLimit(500000),
-    receiver: new Address(receiverAddress),
+    receiver: sender,
     value: Balance.Zero(),
   })
 
