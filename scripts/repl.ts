@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js'
 import {} from '@elrondnetwork/erdjs'
 
 const playground = () => {
