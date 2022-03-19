@@ -35,6 +35,4 @@ const saveSnapshotAddresses = async (addresses: string[]) => {
   await fs.promises.writeFile(output, jsoned, { encoding: 'utf8' })
 }
 
-const onlyUniqueFilter = (value: any, index: any, self: any) => self.indexOf(value) === index
-
 main()
