@@ -1,5 +1,6 @@
 import path, { dirname } from 'path'
 import fs from 'fs'
+import collect from 'collect.js'
 import { fileURLToPath } from 'url'
 
 const InputDir = 'mergeable'
@@ -17,7 +18,9 @@ const main = async () => {
     merged = merged.concat(snapshot)
   }
 
-  const sanitized = merged.filter(onlyUniqueFilter)
+  const sanitized = collect(merged)
+    .unique()
+    .all()
 
   await saveSnapshotAddresses(sanitized)
 
@@ -31,11 +34,9 @@ const loadSnapshot = async (snapshotFile: string) => {
 }
 
 const saveSnapshotAddresses = async (addresses: string[]) => {
-  const output = path.join(__dirname, '..', 'data', InputDir, OutputFile)
+  const output = path.join(__dirname, '..', 'data', OutputFile)
   const jsoned = JSON.stringify(addresses)
   await fs.promises.writeFile(output, jsoned, { encoding: 'utf8' })
 }
-
-const onlyUniqueFilter = (value: any, index: any, self: any) => self.indexOf(value) === index
 
 main()
