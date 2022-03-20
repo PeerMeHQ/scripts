@@ -71,6 +71,13 @@ const main = async () => {
 
     console.log(`${count}. sent ${RewardTokenIdentifier}-${RewardTokenNonce} to ${receiverBech32}: ${tx.getHash()}`)
 
+    if (count === 1) {
+      console.log('- - - - - - - - - - - - - - - - -')
+      console.log('waiting 60s to verify first send')
+      console.log('- - - - - - - - - - - - - - - - -')
+      await new Promise(r => setTimeout(r, 60000))
+    }
+
     await new Promise(r => setTimeout(r, 300)) // ~ 3 txs / s = 18 txs / block, in a 6 second block
   }
 
