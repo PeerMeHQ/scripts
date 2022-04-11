@@ -3,13 +3,14 @@ import fs from 'fs'
 import fetch from 'node-fetch'
 import { fileURLToPath } from 'url'
 
-const MinPowerRequired = 500
+const MinPowerRequired = 2000
 const OutputFile = 'snapshot.json'
 const ScyApiUrl = 'https://api.superciety.com'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 const main = async () => {
+  const startDate = new Date()
   const candidates = await getAllCandidates()
 
   if (!candidates) {
@@ -38,6 +39,10 @@ const main = async () => {
 
   await saveSnapshotAddresses(addressesPassed)
 
+  const enddate = new Date()
+  const timeElapsedMinutes = (enddate.getTime() - startDate.getTime()) / 1000 / 60
+
+  console.log(`time elapsed in minutes: ${timeElapsedMinutes}`)
   console.log(`done! snapshot of ${addressesPassed.length} accounts saved to '${OutputFile}'`)
 }
 
