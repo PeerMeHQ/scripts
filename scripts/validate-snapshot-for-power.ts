@@ -16,6 +16,8 @@ const main = async () => {
     .unique()
     .all()
 
+  console.log(`scanning ${candidates.length} addresses for min. ${MinPowerRequired} POWER ...`)
+
   let count = 0
   let addressesPassed: string[] = []
 
@@ -30,7 +32,7 @@ const main = async () => {
       console.log(`${count}. address '${candidateAddress}' is not qualified: ${candidatePower} Power`)
     }
 
-    await new Promise(r => setTimeout(r, 500))
+    await new Promise(r => setTimeout(r, 1000))
   }
 
   await saveSnapshotAddresses(addressesPassed)
