@@ -5,7 +5,8 @@ import BigNumber from 'bignumber.js'
 import { fileURLToPath } from 'url'
 
 const TokenIdentifier = ''
-const TokenMinAmount = 0
+const TokenDecimals = 18
+const TokenMinAmount = 1
 const OutputFile = 'snapshot.json'
 const ApiUrl = 'https://api.elrond.com'
 
@@ -33,7 +34,7 @@ const main = async () => {
 
   console.log(`scanning ${candidates.length} candidates ...`)
 
-  const minRequiredBalance = new BigNumber(TokenMinAmount)
+  const minRequiredBalance = new BigNumber(TokenMinAmount).shiftedBy(TokenDecimals)
 
   let count = 0
   let addressesPassed = []
