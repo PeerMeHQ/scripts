@@ -1,8 +1,8 @@
-import path, { dirname } from 'path'
 import fs from 'fs'
 import fetch from 'node-fetch'
-import BigNumber from 'bignumber.js'
 import { fileURLToPath } from 'url'
+import BigNumber from 'bignumber.js'
+import path, { dirname } from 'path'
 import {
   ProxyProvider,
   UserSigner,
@@ -19,8 +19,9 @@ import {
 } from '@elrondnetwork/erdjs'
 
 const RewardTokenIdentifier = ''
-const RewardTokenAmount = 0
-const InputFile = 'in.json'
+const RewardTokenDecimals = 18
+const RewardTokenAmount = 100
+const InputFile = 'winners.json'
 const PemFile = 'distributor.pem'
 const IsTestnet = true
 const SimulateSending = true
@@ -38,6 +39,8 @@ const main = async () => {
 
   console.log(`distributing to ${winners.length} receivers ...`)
   console.log(`total distribution value: ${winners.length * RewardTokenAmount} ${RewardTokenIdentifier}`)
+  console.log('sending first tx in 10s ...')
+  await new Promise(r => setTimeout(r, 10000))
 
   await NetworkConfig.getDefault().sync(provider)
   await account.sync(provider)
@@ -62,6 +65,12 @@ const main = async () => {
       await tx.simulate(provider)
     } else {
       await tx.send(provider)
+    }
+
+    if (count === 1) {
+      console.log(`sent first tx. verify: https://explorer.elrond.com/transactions/${tx.getHash()}`)
+      console.log('starting to send rest in 10s ...')
+      await new Promise(r => setTimeout(r, 10000))
     }
 
     console.log(`${count}. sent ${RewardTokenAmount} ${RewardTokenIdentifier} to ${address}: ${tx.getHash()}`)
@@ -99,7 +108,7 @@ const buildRewardTransactionFor = async (receiverAddress: string) =>
     data: TransactionPayload.contractCall()
       .setFunction(new ContractFunction('ESDTTransfer'))
       .addArg(BytesValue.fromUTF8(RewardTokenIdentifier))
-      .addArg(new BigUIntValue(new BigNumber(RewardTokenAmount)))
+      .addArg(new BigUIntValue(new BigNumber(RewardTokenAmount).shiftedBy(RewardTokenDecimals)))
       .build(),
     gasLimit: new GasLimit(500000),
     receiver: new Address(receiverAddress),
