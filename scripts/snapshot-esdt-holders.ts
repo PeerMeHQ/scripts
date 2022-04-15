@@ -1,16 +1,14 @@
-import path, { dirname } from 'path'
 import fs from 'fs'
 import fetch from 'node-fetch'
-import BigNumber from 'bignumber.js'
 import { fileURLToPath } from 'url'
+import BigNumber from 'bignumber.js'
+import path, { dirname } from 'path'
 
 const TokenIdentifier = ''
 const TokenDecimals = 18
 const TokenMinAmount = 1
 const OutputFile = 'snapshot.json'
 const ApiUrl = 'https://api.elrond.com'
-
-// api can return a max this number; this script only works as long as the nb. of holders is equal or below
 const ApiMaxFetchSizeWithoutPagination = 10000
 
 const IgnoredAccounts = [
