@@ -1,13 +1,19 @@
 import fs from 'fs'
+import { User } from './types'
 import fetch from 'node-fetch'
 import collect from 'collect.js'
 import { fileURLToPath } from 'url'
 import path, { dirname } from 'path'
 
-const InputFile = 'snapshot.json'
-const OutputFile = 'snapshot.json'
-const MinPowerRequired = 500
+const WithApiInfo = ['power']
+
+const InputFile = 'twitter-collected.json'
+const OutputFile = 'validated.json'
 const ScyApiUrl = 'https://api.superciety.com'
+
+// Adapt this logic to fit the conditions
+const qualifies = (user: User) => user.power > 20 && Object.keys(user?.connections || {}).length >= 2
+//
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -16,20 +22,20 @@ const main = async () => {
     .unique()
     .all()
 
-  console.log(`scanning ${candidates.length} addresses for min. ${MinPowerRequired} POWER ...`)
+  console.log(`scanning ${candidates.length} addresses ...`)
 
   let count = 0
   let addressesPassed: string[] = []
 
   for (let candidateAddress of candidates) {
     count++
-    const candidatePower = await getCandidatePower(candidateAddress)
+    const candidate = await getCandidate(candidateAddress)
 
-    if (candidatePower >= MinPowerRequired) {
+    if (candidate && qualifies(candidate)) {
       addressesPassed.push(candidateAddress)
-      console.log(`${count}. address '${candidateAddress}' meets requirements: ${candidatePower} Power`)
+      console.log(`${count}. address '${candidateAddress}' meets requirements`)
     } else {
-      console.log(`${count}. address '${candidateAddress}' is not qualified: ${candidatePower} Power`)
+      console.log(`${count}. address '${candidateAddress}' is not qualified`)
     }
 
     await new Promise(r => setTimeout(r, 1000))
@@ -46,11 +52,11 @@ const getCandidates = async () => {
   return JSON.parse(inputContents) as string[]
 }
 
-const getCandidatePower = async (address: string) => {
-  const res = await fetch(`${ScyApiUrl}/users/${address}?with=power`)
-  if (!res.ok) return 0
-  const body = (await res.json()) as { data: { power: number } }
-  return body.data.power || 0
+const getCandidate = async (address: string) => {
+  const res = await fetch(`${ScyApiUrl}/users/${address}?with=${WithApiInfo.join(',')}`)
+  if (!res.ok) return null
+  const body = (await res.json()) as { data: User }
+  return body.data
 }
 
 const saveSnapshotAddresses = async (addresses: string[]) => {
