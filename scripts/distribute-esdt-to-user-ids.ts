@@ -4,18 +4,18 @@ import { fileURLToPath } from 'url'
 import BigNumber from 'bignumber.js'
 import path, { dirname } from 'path'
 import {
-  ProxyProvider,
-  UserSigner,
   Account,
-  Transaction,
   Address,
   Balance,
-  TransactionPayload,
   GasLimit,
+  UserSigner,
+  BytesValue,
+  Transaction,
+  BigUIntValue,
+  ProxyProvider,
   NetworkConfig,
   ContractFunction,
-  BigUIntValue,
-  BytesValue,
+  TransactionPayload,
 } from '@elrondnetwork/erdjs'
 
 const RewardTokenIdentifier = ''
@@ -37,7 +37,7 @@ const main = async () => {
   const account = new Account(signer.getAddress())
   const winners = await getWinnerIdentifiers()
 
-  console.log(`distributing to ${winners.length} receivers ...`)
+  console.log(`distributing to ${winners.length} receivers from ${signer.getAddress()} ...`)
   console.log(`total distribution value: ${winners.length * RewardTokenAmount} ${RewardTokenIdentifier}`)
   console.log('sending first tx in 10s ...')
   await new Promise(r => setTimeout(r, 10000))
